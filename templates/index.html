@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSON File Upload</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace; /* 리눅스 터미널 느낌 */
+            background-color: #1e1e1e;
+            color: #ffffff;
+            padding: 20px;
+        }
+        h1 {
+            color: #00ff00; /* 초록색 */
+        }
+        #response-output {
+            margin-top: 10px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .success {
+            background-color: #28a745; /* 초록색 배경 */
+            color: white;
+        }
+        .error {
+            background-color: #dc3545; /* 빨간색 배경 */
+            color: white;
+        }
+        pre {
+            background-color: #2a2a2a; /* 어두운 배경 */
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto; /* 긴 내용 스크롤 가능 */
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload WSON File</h1>
+    <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" id="file-input" name="file" accept=".ws" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    <div id="response-output"></div>
+    
+    <h3>Original WSON File:</h3>
+    <pre id="original-wson-output"></pre>
+
+    <h3>Server Response:</h3>
+    <pre id="server-response-output"></pre>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // 기본 제출 동작 방지
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const originalWson = e.target.result; // 원본 WSON 파일 내용
+                    document.getElementById('original-wson-output').innerText = originalWson; // 원본 WSON 출력
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    fetch('/api/data', {
+                        method: 'POST',
+                        body: formData // WSON 파일 데이터 전송
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error on the server: ' + response.statusText);
+                        }
+                        return response.text(); // WSON 형식으로 응답을 텍스트로 받기
+                    })
+                    .then(data => {
+                        // WSON 데이터를 화면에 표시
+                        const responseDiv = document.getElementById('response-output');
+                        responseDiv.innerText = 'Response Status: success'; // 성공 상태 표시
+                        responseDiv.className = 'success'; // 성공 클래스 추가
+
+                        const serverResponseOutput = document.getElementById('server-response-output');
+                        serverResponseOutput.innerText = data; // 서버 응답을 WSON 형식으로 표시
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        const responseDiv = document.getElementById('response-output');
+                        responseDiv.innerText = 'Error: ' + error.message; // 오류 메시지 출력
+                        responseDiv.className = 'error'; // 오류 클래스 추가
+                    });
+                };
+                reader.readAsText(file); // WSON 파일 내용을 텍스트로 읽기
+            }
+        });
+    </script>
+</body>
+</html>
