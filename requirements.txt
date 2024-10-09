@@ -1,4 +1,5 @@
 Flask
 requests
 pytest
+flake8
 wson
